@@ -144,7 +144,98 @@ r.forEach(e => {
 
 
 
+function prepareConvMessagesAndReverse(r) {
+  let tempObj:any = {
+    id:'',
+    sender:'',
+    messages:[]
+};
+let tempObj2= {
+    id: '',
+    content:'',
+    timestamp:'',
+    sender:'',
+    unread: false
+};
+let tempArr:any = [];
+let tmpObj;
 
+r.forEach(e => {
+  if(e.messages.length === 0) {
+    tmpObj = {
+      id: e.conversation_id,
+      messages: [],
+      sender: e.friend
+    }
+    setUserSender(e.user);
+    tempArr.push(tmpObj);
+  }
+});
+r.forEach(e => {
+  if(e.messages.length > 0) {
+    setUserSender(e.user);
+    tempObj.id = e.conversation_id;
+    e.messages.forEach(x => {
+      tempObj2.id = x._id;
+      tempObj2.content = x.message;
+      tempObj2.timestamp = x.timestamp;
+      tempObj2.sender = x.from;
+      if(x.to?._id === myId) {
+        tempObj.sender = x.from;
+      } else {
+        tempObj.sender = x.to
+      }
+      tempObj2.unread = false;
+      tempObj.messages.push(tempObj2);
+      tempObj2 = { id: '',
+        content:'',
+        timestamp:'',
+        sender:'',
+        unread: false};
+    })
+    
+  }
+  tempArr.push(tempObj);
+  tempObj = {
+    id:'',
+    sender:'',
+    messages:[]
+  }
+});
+
+
+
+
+
+
+let tempSelChat:any = [];
+for(let i = 0; i < tempArr.length; i++) {
+  if(selectedChat[i].id === tempArr[i].id) {
+    tempSelChat = [tempArr[i]];
+  }
+}
+
+  
+tempArr.sort(dynamicSort("id"));
+
+
+for(let i = 0; i < messages.length; i++) {
+  if(tempSelChat.length !== 0 && messages.length !== 0) {
+    if(tempSelChat[0].id !== messages[i].id) {
+
+      tempArr.push(messages[i]);
+      tempArr.sort(dynamicSort("id"));
+    }
+  } else {
+    tempSelChat.push([tempArr[i]])
+  }
+}
+
+
+let currChat = messages.find(e => e.id === tempSelChat[0].id);
+let currTempArr = tempArr.find(e => e.id === tempSelChat[0].id);
+if(currChat) currChat.messages = currTempArr.messages;
+}
 
 
 
@@ -210,11 +301,8 @@ r.forEach(e => {
 
 
 
-console.log('TEMP ARRRRRR', tempArr);
-
 
 let tempSelChat:any = [];
-console.log('before', tempSelChat);
 for(let i = 0; i < tempArr.length; i++) {
   if(selectedChat[i].id === tempArr[i].id) {
     tempSelChat = [tempArr[i]];
@@ -285,7 +373,7 @@ result.push(fndMsg);
 if(restMsgs !== undefined) result.push(restMsgs);
 result.sort(dynamicSort("id"));
 
-setSelectedChat(result);
+//setSelectedChat(result);
 setMessages(result);
 
 
@@ -368,7 +456,6 @@ React.useEffect(() => {
   React.useEffect(() => {
     setIsFetched(false);
     const contactHandler = (r) => {
-      console.log(r);
       prepareContactList(r);
       setIsFetched(true);
       
@@ -446,7 +533,7 @@ React.useEffect(() => {
         }
       </Sheet>
       {
-        <MessagesPane chat={isMessagesPaneReady} userSender={userSender} friendId={friendId} isFetched={isFetched} isDataPrepared={isDataPrepared} selectedChat={selectedChat.length !== 0}/>
+        <MessagesPane chat={isMessagesPaneReady} userSender={userSender} friendId={friendId} isFetched={isFetched} isDataPrepared={isDataPrepared} selectedChat={selectedChat.length !== 0} setUserSender={setUserSender} prepareConvMessagesAndReverse={prepareConvMessagesAndReverse}/>
       }
     </Sheet>
   );

@@ -77,7 +77,7 @@ export default function ChatsPane(props) {
           color="neutral"
           size="sm"
           onClick={() => {
-            toggleMessagesPane();
+            isFetched && isDataPrepared && friendId && toggleMessagesPane();
           }}
           sx={{ display: { sm: 'none' } }}
         >

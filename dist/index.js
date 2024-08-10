@@ -109,7 +109,34 @@ io.use(function (socket, next) {
     }));
     s.on("getConversation", (id) => __awaiter(void 0, void 0, void 0, function* () {
         // await getConversations(id);
-        yield (0, index_1.getConversation)(id.userId, id.conversation_id).then(r => s.emit("getConversation", r));
+        const page = 2;
+        const limit = 25;
+        const startIndex = (page - 1) * limit;
+        const endIndex = page * limit;
+        yield (0, index_1.getConversation)(id.userId, id.conversation_id).then(r => {
+            let msgLength = r[0]["messages"].length;
+            const temp = r[0]["messages"].slice(startIndex + msgLength - endIndex, startIndex + msgLength);
+            let resultMessages = r;
+            resultMessages[0]["messages"] = temp;
+            s.emit("getConversation", resultMessages);
+        });
+    }));
+    s.on("getChunkOfConversation", (d) => __awaiter(void 0, void 0, void 0, function* () {
+        yield (0, index_1.getConversation)(d.userId, d.conversation_id).then(r => {
+            let page = d.page;
+            let limit = 25;
+            let msgLength = r[0]["messages"].length;
+            let endIndex = msgLength - (page - 1) * limit;
+            let startIndex = Math.max(0, endIndex - limit);
+            console.log(msgLength);
+            console.log(startIndex);
+            console.log(endIndex);
+            console.log(d.page);
+            const temp = r[0]["messages"].slice(startIndex, endIndex);
+            let resultMessages = r;
+            resultMessages[0]["messages"] = temp;
+            s.emit("getChunkOfConversation", resultMessages);
+        });
     }));
     s.on("getConversationByFriendId", (id) => __awaiter(void 0, void 0, void 0, function* () {
         yield (0, index_1.getConversationByFriendId)(id.userId, id.frienId);
