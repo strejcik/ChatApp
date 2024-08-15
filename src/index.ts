@@ -4,6 +4,7 @@ import {removeUser, addUser, getUserSocket, getUser,} from './socketFunctions';
 import bodyParser from 'body-parser';
 import connectDB from './utils/connect-mongo.js';
 import userRoutes from './routes/userRoutes';
+import {createID} from './singal/signal';
 import {
   mongoFindUser, 
   addFriend, 
@@ -18,7 +19,9 @@ import {
   getMyId,
   getContactList,
   getConversation,
-  getConversationByFriendId} from './mongooseFunctions/index';
+  getConversationByFriendId,
+  sGetMyId,
+  sGetFriendId} from './mongooseFunctions/index';
 //import s from './socket';
 require('dotenv').config()
 
@@ -103,9 +106,17 @@ io.use(function(socket, next){
 }).on("connection", (s:any) => {
   console.log(`⚡: ${s.id} user just connected!`);
   addUser(s.decoded.userId, s.id);
-  // s.on("message", () => {
-  //     socket.emit("message", "kurdebele");
-  // })
+
+
+  s.on("sGetMyId", async() => {
+    await sGetMyId(s.decoded.userId).then(r => s.emit("sGetMyId", r));
+  });
+
+  s.on("sGetFriendId", async(id) => {
+    await sGetFriendId(id).then(r => s.emit("sGetFriendId", r));
+  })
+
+
   s.on("addUser", userId=>{
       mongoFindUser(userId).then(e => addUser(e?._id, s.id));
       //console.log(users);
@@ -185,10 +196,6 @@ io.use(function(socket, next){
       let msgLength = r![0]["messages"].length;
       let endIndex = msgLength - (page - 1) * limit;
       let startIndex = Math.max(0, endIndex - limit);
-      console.log(msgLength);
-      console.log(startIndex);
-      console.log(endIndex);
-      console.log(d.page);
       const temp = r![0]["messages"].slice(startIndex, endIndex);
       let resultMessages = r;
       resultMessages![0]["messages"] = temp;

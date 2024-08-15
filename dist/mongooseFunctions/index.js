@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addMessage = exports.getContactList = exports.getConversationByFriendId = exports.getConversation = exports.getConversations = exports.getMessages = exports.removeFriend = exports.getMyId = exports.populateUser = exports.populateFriends = exports.getFriends = exports.getFriend = exports.addFriend = exports.mongoFindUser = void 0;
+exports.addMessage = exports.getContactList = exports.getConversationByFriendId = exports.getConversation = exports.getConversations = exports.getMessages = exports.removeFriend = exports.sGetFriendId = exports.sGetMyId = exports.getMyId = exports.populateUser = exports.populateFriends = exports.getFriends = exports.getFriend = exports.addFriend = exports.mongoFindUser = void 0;
 const users_1 = __importDefault(require("../models/users"));
 const conversations_1 = __importDefault(require("../models/conversations"));
 const messages_1 = __importDefault(require("../models/messages"));
@@ -99,6 +99,28 @@ const getMyId = (id) => __awaiter(void 0, void 0, void 0, function* () {
     return yield (user === null || user === void 0 ? void 0 : user._id);
 });
 exports.getMyId = getMyId;
+const sGetMyId = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield users_1.default.findOne({ _id: id }).exec();
+    let response = {};
+    response.ikp = user['ikp'];
+    response.bki = user['bki'];
+    response.pk = user['pk'];
+    response.spki = user['spki'];
+    response.spk = user['spk'];
+    return yield response;
+});
+exports.sGetMyId = sGetMyId;
+const sGetFriendId = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield users_1.default.findOne({ _id: id }).exec();
+    let response = {};
+    response.ikp = user['ikp'];
+    response.bki = user['bki'];
+    response.pk = user['pk'];
+    response.spki = user['spki'];
+    response.spk = user['spk'];
+    return yield response;
+});
+exports.sGetFriendId = sGetFriendId;
 const removeFriend = (userId, friendId) => __awaiter(void 0, void 0, void 0, function* () {
     let user = yield (0, exports.mongoFindUser)(userId);
     yield Promise.all(user.friends = user.friends.filter(e => String(e._id) !== friendId));

@@ -100,6 +100,28 @@ export const getMyId = async(id) => {
   const user = await mongoFindUser(id);
 
   return await user?._id;
+}
+
+export const sGetMyId = async(id) => {
+  const user = await User.findOne({_id: id}).exec();
+  let response:any = {};
+  response.ikp = user!['ikp'];
+  response.bki = user!['bki'];
+  response.pk = user!['pk'];
+  response.spki = user!['spki'];
+  response.spk = user!['spk'];
+  return await response;
+} 
+
+export const sGetFriendId = async(id) => {
+  const user = await User.findOne({_id: id}).exec();
+  let response:any = {};
+  response.ikp = user!['ikp'];
+  response.bki = user!['bki'];
+  response.pk = user!['pk'];
+  response.spki = user!['spki'];
+  response.spk = user!['spk'];
+  return await response;
 } 
 
 export const removeFriend = async(userId, friendId) => {

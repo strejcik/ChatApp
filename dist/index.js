@@ -67,9 +67,12 @@ io.use(function (socket, next) {
 }).on("connection", (s) => {
     console.log(`⚡: ${s.id} user just connected!`);
     (0, socketFunctions_1.addUser)(s.decoded.userId, s.id);
-    // s.on("message", () => {
-    //     socket.emit("message", "kurdebele");
-    // })
+    s.on("sGetMyId", () => __awaiter(void 0, void 0, void 0, function* () {
+        yield (0, index_1.sGetMyId)(s.decoded.userId).then(r => s.emit("sGetMyId", r));
+    }));
+    s.on("sGetFriendId", (id) => __awaiter(void 0, void 0, void 0, function* () {
+        yield (0, index_1.sGetFriendId)(id).then(r => s.emit("sGetFriendId", r));
+    }));
     s.on("addUser", userId => {
         (0, index_1.mongoFindUser)(userId).then(e => (0, socketFunctions_1.addUser)(e === null || e === void 0 ? void 0 : e._id, s.id));
         //console.log(users);
@@ -128,10 +131,6 @@ io.use(function (socket, next) {
             let msgLength = r[0]["messages"].length;
             let endIndex = msgLength - (page - 1) * limit;
             let startIndex = Math.max(0, endIndex - limit);
-            console.log(msgLength);
-            console.log(startIndex);
-            console.log(endIndex);
-            console.log(d.page);
             const temp = r[0]["messages"].slice(startIndex, endIndex);
             let resultMessages = r;
             resultMessages[0]["messages"] = temp;

@@ -6,6 +6,7 @@ import { authenticateJWT, authenticateJWTGet} from '../middlewares/authMiddlewar
 import { registerValidation, handleRegisterValidationErrors } from '../middlewares/registerMiddleware.js';
 import { loginValidation, handleLoginValidationErrors } from '../middlewares/loginMiddleware.js';
 import { Request, Response} from "express";
+import {createID} from '../singal/signal';
 const router = express.Router();
 
 // User Registration
@@ -22,8 +23,35 @@ router.post('/register',registerValidation, handleRegisterValidationErrors, asyn
 
     
     const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({
+      email, 
+      password: hashedPassword, 
+    });
 
-    const newUser = new User({ email, password: hashedPassword });
+    let sigObj = await createID();
+
+    function toBuffer(arrayBuffer) {
+      const buffer = Buffer.alloc(arrayBuffer.byteLength);
+      const view = new Uint8Array(arrayBuffer);
+      for (let i = 0; i < buffer.length; ++i) {
+        buffer[i] = view[i];
+      }
+      return buffer;
+    }
+
+    newUser['ikp'].prk = toBuffer(sigObj.identityKeyPair.privKey);
+    newUser['ikp'].pbk = toBuffer(sigObj.identityKeyPair.pubKey);
+    newUser['bki'] = sigObj.baseKeyId;
+    newUser['pk'].ki = sigObj.preKey.keyId;
+    newUser['pk'].kp.prk = toBuffer(sigObj.preKey.keyPair.privKey);
+    newUser['pk'].kp.pbk = toBuffer(sigObj.preKey.keyPair.pubKey);
+    newUser['spki'] = sigObj.signedPreKeyId;
+    newUser['spk'].ki =  sigObj.signedPreKey.keyId;
+    newUser['spk'].kp.prk = toBuffer(sigObj.signedPreKey.keyPair.privKey);
+    newUser['spk'].kp.pbk = toBuffer(sigObj.signedPreKey.keyPair.pubKey);
+    newUser['spk'].si = toBuffer(sigObj.signedPreKey.signature);
+
+    
     await newUser.save();
     return res.json({ message: 'User registered successfully' });
   } catch (error) {
@@ -40,12 +68,15 @@ router.post('/login', loginValidation, handleLoginValidationErrors, async (req:R
     const { email, password } = req.body;
 
     // Check if user exists
-    const user = await User.findOne({ email: email }).lean();
+    let user = await User.findOne({ email: email });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    
 
+    console.log(user);
+    user.save();
     // Compare passwords
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {

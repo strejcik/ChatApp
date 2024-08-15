@@ -10,6 +10,97 @@ import {SocketContext} from '../context/socketContext';
 import idContext from '../context/getMyIdContext';
 import messagesContext from 'context/messagesContext';
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import {
+  KeyHelper,
+  SignedPublicPreKeyType,
+  SignalProtocolAddress,
+  SessionBuilder,
+  PreKeyType,
+  SessionCipher,
+  MessageType,
+} from "@privacyresearch/libsignal-protocol-typescript";
+
+
+import { SignalProtocolStore } from "./storage-type";
+import { SignalDirectory } from "./signal-directory";
+
+
+
+interface ChatMessage {
+  id: number;
+  to: string;
+  from: string;
+  message: MessageType;
+  delivered: boolean;
+}
+interface ProcessedChatMessage {
+  id: number;
+  to: string;
+  from: string;
+  messageText: string;
+}
+let msgID = 0;
+
+function getNewMessageID(): number {
+  return msgID++;
+}
+
+const adalheidAddress = new SignalProtocolAddress("adalheid", 1);
+const brunhildeAddress = new SignalProtocolAddress("brünhild", 1);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function dynamicSort(property) {
   var sortOrder = 1;
   if(property[0] === "-") {
@@ -24,7 +115,354 @@ function dynamicSort(property) {
       return result * sortOrder;
   }
 }
+
+
+
+
+
+
+
+
 export default function MyProfile() {
+  const [mySigObjId, setMySigObjId] = React.useState("");
+  const [adiStore] = React.useState(new SignalProtocolStore());
+  const [brunhildeStore] = React.useState(new SignalProtocolStore());
+
+
+  const [aHasIdentity, setAHasIdentity] = React.useState(false);
+  const [bHasIdentity, setBHasIdentity] = React.useState(false);
+
+
+
+
+
+  const [directory] = React.useState(new SignalDirectory());
+  const [messagesx, setMessagesx] = React.useState<ChatMessage[]>([]);
+  const [processedMessages, setProcessedMessages] = React.useState<
+    ProcessedChatMessage[]
+  >([]);
+
+  const [hasSession, setHasSession] = React.useState(false);
+
+  const [adalheidTyping, setAdalheidTyping] = React.useState("");
+  const [brunhildeTyping, setBrunhildeTyping] = React.useState("");
+
+  const [processing, setProcessing] = React.useState(false);
+
+  const sendMessage = (to: string, from: string, message: MessageType) => {
+    const msg = { to, from, message, delivered: false, id: getNewMessageID() };
+    setMessagesx([...messagesx, msg]);
+  };
+
+
+
+
+  React.useEffect(() => {
+    if (!messagesx.find((m) => !m.delivered) || processing) {
+      return;
+    }
+
+    const getReceivingSessionCipherForRecipient = (to: string) => {
+      // send from Brünhild to Adalheid so use his store
+      const store = to === "brünhild" ? brunhildeStore : adiStore;
+      const address = to === "brünhild" ? adalheidAddress : brunhildeAddress;
+      return new SessionCipher(store, address);
+    };
+
+    const doProcessing = async () => {
+      while (messagesx.length > 0) {
+        const nextMsg = messagesx.shift();
+        if (!nextMsg) {
+          continue;
+        }
+        const cipher = getReceivingSessionCipherForRecipient(nextMsg.to);
+        const processed = await readMessage(nextMsg, cipher);
+        processedMessages.push(processed);
+      }
+      setMessagesx([...messagesx]);
+      setProcessedMessages([...processedMessages]);
+    };
+    setProcessing(true);
+    doProcessing().then(() => {
+      setProcessing(false);
+    });
+  }, [adiStore, brunhildeStore, messagesx, processedMessages, processing]);
+
+
+  const readMessage = async (msg: ChatMessage, cipher: SessionCipher) => {
+    let plaintext: ArrayBuffer = new Uint8Array().buffer;
+    if (msg.message.type === 3) {
+      console.log({ msg });
+      plaintext = await cipher.decryptPreKeyWhisperMessage(
+        msg.message.body!,
+        "binary"
+      );
+      setHasSession(true);
+    } else if (msg.message.type === 1) {
+      plaintext = await cipher.decryptWhisperMessage(
+        msg.message.body!,
+        "binary"
+      );
+    }
+    const stringPlaintext = new TextDecoder().decode(new Uint8Array(plaintext));
+    console.log(stringPlaintext);
+
+    const { id, to, from } = msg;
+    return { id, to, from, messageText: stringPlaintext };
+  };
+
+  const storeSomewhereSafe = (store: SignalProtocolStore) => (
+    key: string,
+    value: any
+  ) => {
+    store.put(key, value);
+  };
+
+
+
+  const createID = async (name: string, store: SignalProtocolStore, r) => {
+
+
+
+    let createIdObj:any = r;
+    const registrationId = KeyHelper.generateRegistrationId();
+    storeSomewhereSafe(store)(`registrationID`, registrationId);
+    const {
+      bki,
+      ikp,
+      pk,
+      spki,
+      spk } = createIdObj;
+
+    let baseKeyId = bki;
+    let identityKeyPair = ikp;
+    identityKeyPair.pubKey = identityKeyPair.pbk
+    identityKeyPair.privKey = identityKeyPair.prk
+    identityKeyPair.pbk = "";
+    identityKeyPair.prk = "";
+    let preKey = pk;
+    preKey.keyId = preKey.ki;
+    preKey.keyPair = preKey.kp;
+    preKey.keyPair.pubKey = preKey.keyPair.pbk;
+    preKey.keyPair.privKey = preKey.keyPair.prk; 
+    preKey.ki = "";
+    preKey.kp = "";
+    preKey.keyPair.pbk = "";
+    preKey.keyPair.prk = "";
+
+    let signedPreKeyId = spki;
+    let signedPreKey = spk;
+    signedPreKey.keyPair = spk.kp;
+    signedPreKey.keyPair.pubKey = spk.kp.pbk;
+    signedPreKey.keyPair.privKey = spk.kp.prk;
+    signedPreKey.keyId = spk.ki;
+    signedPreKey.signature = spk.si;
+    spk.kp = "";
+    spk.ki = "";
+    spk.si = "";
+
+    
+
+    storeSomewhereSafe(store)("identityKey", identityKeyPair);
+
+    console.log('STORE', store);
+
+    store.storePreKey(`${baseKeyId}`, preKey.keyPair);
+    store.storeSignedPreKey(signedPreKeyId, signedPreKey.keyPair);
+    const publicSignedPreKey: SignedPublicPreKeyType = {
+      keyId: signedPreKeyId,
+      publicKey: signedPreKey.keyPair.pubKey,
+      signature: signedPreKey.signature,
+    };
+
+
+    const publicPreKey: PreKeyType = {
+      keyId: pk.ki,
+      publicKey: pk.kp.pbk,
+    };
+    directory.storeKeyBundle(name, {
+      registrationId,
+      identityPubKey: identityKeyPair.pubKey,
+      signedPreKey: publicSignedPreKey,
+      oneTimePreKeys: [publicPreKey],
+    });
+    
+  };
+
+  const createAdalheidIdentity = async (r) => {
+    await createID("adalheid", adiStore, r);
+    console.log({ adiStore });
+    setAHasIdentity(true);
+  };
+
+  const createBrunhildeIdentity = async (r) => {
+    await createID("brünhild", brunhildeStore, r);
+    console.log({ brunhildeStore });
+    setBHasIdentity(true);
+  };
+
+
+
+  const starterMessageBytes = Uint8Array.from([
+    0xce,
+    0x93,
+    0xce,
+    0xb5,
+    0xce,
+    0xb9,
+    0xce,
+    0xac,
+    0x20,
+    0xcf,
+    0x83,
+    0xce,
+    0xbf,
+    0xcf,
+    0x85,
+  ]);
+
+
+  const startSessionWithBrunhilde = async () => {
+    // get Brünhild' key bundle
+    const brunhildeBundle = directory.getPreKeyBundle("brünhild");
+    console.log({ brunhildeBundle });
+
+    const recipientAddress = brunhildeAddress;
+
+    // Instantiate a SessionBuilder for a remote recipientId + deviceId tuple.
+    const sessionBuilder = new SessionBuilder(adiStore, recipientAddress);
+
+    
+
+    // Process a prekey fetched from the server. Returns a promise that resolves
+    // once a session is created and saved in the store, or rejects if the
+    // identityKey differs from a previously seen identity for this address.
+    console.log("adalheid processing prekey");
+    await sessionBuilder.processPreKey(brunhildeBundle!);
+
+    // Now we can send an encrypted message
+    const adalheidSessionCipher = new SessionCipher(adiStore, recipientAddress);
+    const ciphertext = await adalheidSessionCipher.encrypt(
+      starterMessageBytes.buffer
+    );
+
+    sendMessage("brünhild", "adalheid", ciphertext);
+  };
+
+  const startSessionWithAdalheid = async () => {
+    // get Adalheid's key bundle
+    console.log(directory);
+    const adalheidBundle = directory.getPreKeyBundle("adalheid");
+    console.log({ adalheidBundle });
+
+    const recipientAddress = adalheidAddress;
+
+    // Instantiate a SessionBuilder for a remote recipientId + deviceId tuple.
+    const sessionBuilder = new SessionBuilder(brunhildeStore, recipientAddress);
+
+    
+    // Process a prekey fetched from the server. Returns a promise that resolves
+    // once a session is created and saved in the store, or rejects if the
+    // identityKey differs from a previously seen identity for this address.
+    console.log("brünhild processing prekey");
+    await sessionBuilder.processPreKey(adalheidBundle!);
+
+    // Now we can send an encrypted message
+    const brunhildeSessionCipher = new SessionCipher(
+      brunhildeStore,
+      recipientAddress
+    );
+    var uint8array = new TextEncoder().encode("hello world");
+    const ciphertext = await brunhildeSessionCipher.encrypt(
+      uint8array.buffer
+    );
+
+    
+
+    sendMessage("adalheid", "brünhild", ciphertext);
+  };
+
+
+
+  const getSessionCipherForRecipient = (to: string) => {
+    // send from Brünhild to adalheid so use his store
+    const store = to === "adalheid" ? brunhildeStore : adiStore;
+    const address = to === "adalheid" ? adalheidAddress : brunhildeAddress;
+    return new SessionCipher(store, address);
+  };
+
+  const encryptAndSendMessage = async (to: string, message: string) => {
+    const cipher = getSessionCipherForRecipient(to);
+    const from = to === "adalheid" ? "brünhild" : "adalheid";
+    const ciphertext = await cipher.encrypt(
+      new TextEncoder().encode(message).buffer
+    );
+    if (from === "adalheid") {
+      setAdalheidTyping("");
+    } else {
+      setBrunhildeTyping("");
+    }
+    sendMessage(to, from, ciphertext);
+  };
+
+
+////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   const socket = useContext(SocketContext);
   const {messages, setMessages} = useContext(messagesContext);
   const [selectedChat, setSelectedChat] = React.useState(messages[0]);
@@ -35,33 +473,155 @@ export default function MyProfile() {
   const [userSender, setUserSender] = React.useState<any>();
   const [enableConversationFetching, setIsConversationFetched] = React.useState<boolean>(false);
   const [toggle, setToggle] = React.useState(true);
-  const [refresh, setRefresh] = React.useState(false);
-  const [convId, setConvId] = React.useState<number>();
-  const [convData, setConvData] = React.useState(messages[0]);
+
+
+
+
+//   React.useEffect(() => {
+
+//     const idHand = async(r) => {
+      
+//       let createIdentity = async () => {
+        
+//         //await createBrunhildeIdentity();
+//         return await createAdalheidIdentity(r);
+//       }
+  
+//       await createIdentity().catch(err => console.log(err))
+//     }
+//     socket.emit("s");
+//     socket.on("s", idHand);
+//     return () => {
+//       socket.off("s",idHand);
+//     };
+//   }, [socket])
+
+
+
+//   React.useEffect(() => {
+
+//     const idHand = async(r) => {
+      
+//       let createIdentity = async () => {
+        
+//         //await createBrunhildeIdentity();
+//         return await createBrunhildeIdentity(r);
+//       }
+  
+//       await createIdentity().catch(err => console.log(err))
+//     }
+//     socket.emit("t");
+//     socket.on("t", idHand);
+//     return () => {
+//       socket.off("t",idHand);
+//     };
+//   }, [socket])
+
+
+
+
+React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if(hasSession || !(aHasIdentity && bHasIdentity)) {
+
+        startSessionWithAdalheid();
+      }
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      console.log(messagesx)
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
 
   // React.useEffect(() => {
-  //   setIsFetched(false);
-  //   const refreshHandler = (r) => {
-  //     setIsFetched(false);
-  //     if(myId){
-  //       socket.emit("getConversations", myId);
-  //     } 
+  //   let obj = {
+  //     userId: "66bb6e066d22021443d8b064",
+  //     friendId: "66bb6d706d22021443d8b061"
+  //   }
+  //   socket.emit("addFriend", obj);
+  // }, []);
+
+
+
+
+
+
+    React.useEffect(() => {
+
+    const idHand = async(r) => {
       
-  //   }
-  //   const convHandler = (r) => {
-  //     setMessages([...r]);
-  //     setIsFetched(true);
-  //   }
-  //   if(myId) {
-  //     socket.emit("getConversations", myId); 
-  //     socket.on("getConversations", convHandler);
-  //     socket.on("refreshMessages", refreshHandler);
-  //   }
-  //   return () => {
-  //     socket.off("getConversations",convHandler);
-  //     socket.off("refreshMessages", refreshHandler);
-  //   };
-  // }, [socket, myId]);
+      let createIdentity = async () => {
+        
+        //await createBrunhildeIdentity();
+        return await createAdalheidIdentity(r);
+
+      }
+  
+      await createIdentity().catch(err => console.log(err))
+    }
+    if(myId) {
+      socket.emit("sGetMyId");
+      socket.on("sGetMyId", idHand);
+    }
+    return () => {
+      socket.off("sGetMyId",idHand);
+    };
+  }, [socket, myId])
+
+
+
+
+  React.useEffect(() => {
+
+    const idHand = async(r) => {
+      
+      let createIdentity = async () => {
+        
+        return await createBrunhildeIdentity(r);
+        //return await createAdalheidIdentity(r);
+
+      }
+  
+      await createIdentity().catch(err => console.log(err))
+    }
+    if(friendId) {
+      socket.emit("sGetFriendId",friendId);
+      socket.on("sGetFriendId", idHand);
+    }
+    return () => {
+      socket.off("sGetFriendId",idHand);
+    };
+  }, [socket, myId, friendId])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -86,14 +646,6 @@ export default function MyProfile() {
 
 
   React.useEffect(() => {
-    // let getFriend = {
-    //   userId: "66a52413afa4f648b898c0f4",
-    //   // friendId: "66a5241cafa4f648b898c0f7",
-    //   // message: "sample2",
-    //   // conversationId: "d5676e64-3331-4529-a41b-8e74cad34fcc"
-    // }
-    //socket.emit("getConversations", getFriend);
-    //socket.emit("populateUser", getFriend.userId);
     const idHandler = (r) => {
       setMyId(r)
     }
@@ -193,14 +745,14 @@ r.forEach(e => {
         sender:'',
         unread: false};
     })
-    
+    tempArr.push(tempObj);
+    tempObj = {
+      id:'',
+      sender:'',
+      messages:[]
+    }
   }
-  tempArr.push(tempObj);
-  tempObj = {
-    id:'',
-    sender:'',
-    messages:[]
-  }
+
 });
 
 
@@ -288,14 +840,14 @@ r.forEach(e => {
         sender:'',
         unread: false};
     })
-    
+    tempArr.push(tempObj);
+    tempObj = {
+      id:'',
+      sender:'',
+      messages:[]
+    }
   }
-  tempArr.push(tempObj);
-  tempObj = {
-    id:'',
-    sender:'',
-    messages:[]
-  }
+
 });
 
 
@@ -401,7 +953,8 @@ React.useEffect(() => {
     prepareConvMessages(r);
   }
   if(myId && (toggle === true || toggle === false)) {
-    let currentChatId = messages.find(e => e.id === selectedChat[0].id).id;
+    //can be a error below
+    let currentChatId = messages.find(e => e?.id === selectedChat[0]?.id)?.id;
     let userObj = {
       userId: myId,
       conversation_id: currentChatId,
@@ -413,44 +966,6 @@ React.useEffect(() => {
     socket.off("getConversation",convHandler);
   };
 }, [toggle]);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// React.useEffect(() => {
-
-//   if(myId) {
-//     console.log('inside');
-//     rfrsh(convData);
-//   }
-//   return () => {
-//     setRefresh(false);
-//   };
-// }, [refresh]);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
   React.useEffect(() => {
@@ -470,25 +985,6 @@ React.useEffect(() => {
   }, [myId]);
 
 
-
-
-
-
-
-
-
-
-
-
-
-  // React.useEffect(() => {
-
-  //   if(enableConversationFetching) {
-
-  //     prepareConvMessages();
-     
-  //   }
-  // }, [enableConversationFetching]);
 
   const isMessagesPaneReady = selectedChat.length !== 0 && isDataPrepared && friendId? selectedChat[0] : [];
   return (
