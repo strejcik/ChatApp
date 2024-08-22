@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@privacyresearch/libsignal-protocol-typescript": "^0.0.16",
+    "@privacyresearch/libsignal-protocol-typescript": "^0.0.15",
     "@types/express": "^4.17.17",
     "@types/node": "^20.4.2",
     "bcryptjs": "^2.4.3",

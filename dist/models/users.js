@@ -30,57 +30,57 @@ const userSchema = new mongoose_1.default.Schema({
         type: String,
         required: true,
     },
-    bki: {
+    baseKeyId: {
         type: Number,
         required: true
     },
-    ikp: {
-        prk: {
+    identityKeyPair: {
+        privKey: {
             type: Buffer,
             required: true,
         },
-        pbk: {
+        pubKey: {
             type: Buffer,
             required: true,
         }
     },
-    pk: {
-        ki: {
+    preKey: {
+        keyId: {
             type: Number,
             required: true
         },
-        kp: {
-            prk: {
+        keyPair: {
+            privKey: {
                 type: Buffer,
                 required: true,
             },
-            pbk: {
+            pubKey: {
                 type: Buffer,
                 required: true,
             }
         }
     },
-    spk: {
-        ki: {
+    signedPreKey: {
+        keyId: {
             type: Number,
             required: true
         },
-        kp: {
-            prk: {
+        keyPair: {
+            privKey: {
                 type: Buffer,
                 required: true,
             },
-            pbk: {
+            pubKey: {
                 type: Buffer,
                 required: true,
             }
         },
-        si: {
+        signature: {
             type: Buffer,
             required: true,
         }
     },
-    spki: {
+    signedPreKeyId: {
         type: Number,
         required: true
     },

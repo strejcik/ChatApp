@@ -13,8 +13,18 @@ export interface IMessage extends Document {
 const messageSchema = new mongoose.Schema(
   {
     message: {
-        type: String,
-        required: true,
+        body: {
+          type: String,
+          required: true,
+        },
+        registrationId: {
+          type: Number,
+          required: true,
+        },
+        type: {
+          type: Number,
+          required: true
+        }
     },
     from: {
         type: mongoose.Schema.Types.ObjectId,

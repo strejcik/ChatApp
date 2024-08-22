@@ -67,11 +67,15 @@ io.use(function (socket, next) {
 }).on("connection", (s) => {
     console.log(`⚡: ${s.id} user just connected!`);
     (0, socketFunctions_1.addUser)(s.decoded.userId, s.id);
-    s.on("sGetMyId", () => __awaiter(void 0, void 0, void 0, function* () {
-        yield (0, index_1.sGetMyId)(s.decoded.userId).then(r => s.emit("sGetMyId", r));
+    s.on("sxGetMyId", () => __awaiter(void 0, void 0, void 0, function* () {
+        console.log(s.decoded.userId);
+        yield (0, index_1.sGetMyId)(s.decoded.userId).then(r => s.emit("sxGetMyId", r));
     }));
     s.on("sGetFriendId", (id) => __awaiter(void 0, void 0, void 0, function* () {
         yield (0, index_1.sGetFriendId)(id).then(r => s.emit("sGetFriendId", r));
+    }));
+    s.on("sAddMessage", (d) => __awaiter(void 0, void 0, void 0, function* () {
+        yield (0, index_1.sAddMessage)(d.userId, d.friendId, d.message).then(() => s === null || s === void 0 ? void 0 : s.to((0, socketFunctions_1.getUserSocket)(d.friendId)).emit('refreshMessages', { message: d.message, user: d.userId }));
     }));
     s.on("addUser", userId => {
         (0, index_1.mongoFindUser)(userId).then(e => (0, socketFunctions_1.addUser)(e === null || e === void 0 ? void 0 : e._id, s.id));
@@ -118,16 +122,23 @@ io.use(function (socket, next) {
         const endIndex = page * limit;
         yield (0, index_1.getConversation)(id.userId, id.conversation_id).then(r => {
             let msgLength = r[0]["messages"].length;
-            const temp = r[0]["messages"].slice(startIndex + msgLength - endIndex, startIndex + msgLength);
-            let resultMessages = r;
-            resultMessages[0]["messages"] = temp;
-            s.emit("getConversation", resultMessages);
+            if (msgLength >= 25) {
+                const temp = r[0]["messages"].slice(startIndex + msgLength - endIndex, startIndex + msgLength);
+                let resultMessages = r;
+                resultMessages[0]["messages"] = temp;
+                s.emit("getConversation", resultMessages);
+            }
+            if (msgLength < 25) {
+                s.emit("getConversation", r);
+            }
         });
     }));
     s.on("getChunkOfConversation", (d) => __awaiter(void 0, void 0, void 0, function* () {
         yield (0, index_1.getConversation)(d.userId, d.conversation_id).then(r => {
             let page = d.page;
             let limit = 25;
+            console.log(r);
+            console.log(d);
             let msgLength = r[0]["messages"].length;
             let endIndex = msgLength - (page - 1) * limit;
             let startIndex = Math.max(0, endIndex - limit);
@@ -150,32 +161,6 @@ io.use(function (socket, next) {
     s.on("getMyId", () => __awaiter(void 0, void 0, void 0, function* () {
         yield (0, index_1.getMyId)(s.decoded.userId).then(r => s.emit("getMyId", r));
     }));
-    // socket.on('getMe', (u) => {
-    //     socket.emit("me", getUser(u)["socketId"]);
-    // });
-    // socket.on("refreshOnlineUsers", () => {
-    //     socket.emit("getUsers", users);
-    // });
-    // socket.on('callUser', (data)=>{
-    //     socket.to(getU(data.userToCall)?.["socketId"]).emit('hey', {signal: data.signalData, from: data.from})
-    // })
-    // socket.on('acceptCall', (data)=>{
-    //     socket.to(getU(data.to)["socketId"]).emit('callAccepted', data.signal)
-    // })
-    // socket.on('close', (data)=>{
-    //     socket.to(getU(data.to)?.["socketId"]).emit('close');
-    // })
-    // socket.on('rejected', (data)=>{
-    //     socket.to(getU(data.to)["socketId"]).emit('rejected')
-    // })
-    //send and get message
-    // socket.on("sendMessage", ({senderId, receiverId, text}) => {
-    //     const user = getUser(receiverId);
-    //     socket.to(user?.socketId).emit("getMessage", {
-    //         senderId,
-    //         text
-    //     })
-    // });
     s.on("disconnect", () => {
         console.log('🔥: A user disconnected');
         (0, socketFunctions_1.removeUser)(s.id);

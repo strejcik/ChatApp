@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addMessage = exports.getContactList = exports.getConversationByFriendId = exports.getConversation = exports.getConversations = exports.getMessages = exports.removeFriend = exports.sGetFriendId = exports.sGetMyId = exports.getMyId = exports.populateUser = exports.populateFriends = exports.getFriends = exports.getFriend = exports.addFriend = exports.mongoFindUser = void 0;
+exports.sAddMessage = exports.addMessage = exports.getContactList = exports.getConversationByFriendId = exports.getConversation = exports.getConversations = exports.getMessages = exports.removeFriend = exports.sGetFriendId = exports.sGetMyId = exports.getMyId = exports.populateUser = exports.populateFriends = exports.getFriends = exports.getFriend = exports.addFriend = exports.mongoFindUser = void 0;
 const users_1 = __importDefault(require("../models/users"));
 const conversations_1 = __importDefault(require("../models/conversations"));
 const messages_1 = __importDefault(require("../models/messages"));
@@ -102,22 +102,22 @@ exports.getMyId = getMyId;
 const sGetMyId = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield users_1.default.findOne({ _id: id }).exec();
     let response = {};
-    response.ikp = user['ikp'];
-    response.bki = user['bki'];
-    response.pk = user['pk'];
-    response.spki = user['spki'];
-    response.spk = user['spk'];
+    response.identityKeyPair = user['identityKeyPair'];
+    response.baseKeyId = user['baseKeyId'];
+    response.preKey = user['preKey'];
+    response.signedPreKeyId = user['signedPreKeyId'];
+    response.signedPreKey = user['signedPreKey'];
     return yield response;
 });
 exports.sGetMyId = sGetMyId;
 const sGetFriendId = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield users_1.default.findOne({ _id: id }).exec();
     let response = {};
-    response.ikp = user['ikp'];
-    response.bki = user['bki'];
-    response.pk = user['pk'];
-    response.spki = user['spki'];
-    response.spk = user['spk'];
+    response.identityKeyPair = user['identityKeyPair'];
+    response.baseKeyId = user['baseKeyId'];
+    response.preKey = user['preKey'];
+    response.signedPreKeyId = user['signedPreKeyId'];
+    response.signedPreKey = user['signedPreKey'];
     return yield response;
 });
 exports.sGetFriendId = sGetFriendId;
@@ -356,3 +356,44 @@ const addMessage = (userId, friendId, message) => __awaiter(void 0, void 0, void
     }));
 });
 exports.addMessage = addMessage;
+//////////////////////////////////////////////////////////////
+const sAddMessage = (userId, friendId, message) => __awaiter(void 0, void 0, void 0, function* () {
+    yield conversations_1.default.findOne({ user: userId, friend: friendId })
+        .populate({
+        strictPopulate: false,
+        path: "messages",
+        model: 'Message'
+    }).exec().then((r) => __awaiter(void 0, void 0, void 0, function* () {
+        const msg = yield messages_1.default.create({
+            message: message,
+            from: new mongoose_1.default.Types.ObjectId(userId),
+            to: new mongoose_1.default.Types.ObjectId(friendId),
+            conversation: new mongoose_1.default.Types.ObjectId()
+        }).then((m) => __awaiter(void 0, void 0, void 0, function* () {
+            (yield m).save();
+            //r.messages = [...r.messages, m];
+            console.log('first');
+            r.messages.push(m);
+            (yield r).save();
+        }));
+    }));
+    yield conversations_1.default.findOne({ user: friendId, friend: userId })
+        .populate({
+        strictPopulate: false,
+        path: "messages",
+        model: 'Message'
+    }).exec().then((r) => __awaiter(void 0, void 0, void 0, function* () {
+        const msg = yield messages_1.default.create({
+            message: message,
+            from: new mongoose_1.default.Types.ObjectId(userId),
+            to: new mongoose_1.default.Types.ObjectId(friendId),
+            conversation: new mongoose_1.default.Types.ObjectId()
+        }).then((m) => __awaiter(void 0, void 0, void 0, function* () {
+            (yield m).save();
+            r.messages.push(m);
+            console.log('second');
+            (yield r).save();
+        }));
+    }));
+});
+exports.sAddMessage = sAddMessage;

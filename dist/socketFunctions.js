@@ -17,7 +17,10 @@ const getUser = (userId) => {
 };
 exports.getUser = getUser;
 const getUserSocket = (userId) => {
-    return users.find(user => user.userId === userId)["socketId"];
+    let user = users.find(user => user.userId === userId);
+    if (user) {
+        return user["socketId"];
+    }
 };
 exports.getUserSocket = getUserSocket;
 const getU = (socketId) => {

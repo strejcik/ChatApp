@@ -105,22 +105,22 @@ export const getMyId = async(id) => {
 export const sGetMyId = async(id) => {
   const user = await User.findOne({_id: id}).exec();
   let response:any = {};
-  response.ikp = user!['ikp'];
-  response.bki = user!['bki'];
-  response.pk = user!['pk'];
-  response.spki = user!['spki'];
-  response.spk = user!['spk'];
+  response.identityKeyPair = user!['identityKeyPair'];
+  response.baseKeyId = user!['baseKeyId'];
+  response.preKey = user!['preKey'];
+  response.signedPreKeyId = user!['signedPreKeyId'];
+  response.signedPreKey = user!['signedPreKey'];
   return await response;
 } 
 
 export const sGetFriendId = async(id) => {
   const user = await User.findOne({_id: id}).exec();
   let response:any = {};
-  response.ikp = user!['ikp'];
-  response.bki = user!['bki'];
-  response.pk = user!['pk'];
-  response.spki = user!['spki'];
-  response.spk = user!['spk'];
+  response.identityKeyPair = user!['identityKeyPair'];
+  response.baseKeyId = user!['baseKeyId'];
+  response.preKey = user!['preKey'];
+  response.signedPreKeyId = user!['signedPreKeyId'];
+  response.signedPreKey = user!['signedPreKey'];
   return await response;
 } 
 
@@ -367,6 +367,64 @@ export const getContactList = async(userId) => {
 
 
 export const addMessage = async(userId, friendId, message) => {
+ 
+
+  
+  await Conversation.findOne({user: userId, friend: friendId})
+  .populate({
+    strictPopulate: false,
+    path:"messages",
+    model: 'Message'
+  }).exec().then(async(r:any) => {
+    const msg = await Message.create({
+      message: message,
+      from: new mongoose.Types.ObjectId(userId),
+      to: new mongoose.Types.ObjectId(friendId),
+      conversation: new mongoose.Types.ObjectId()
+    }).then(async(m) => {
+      (await m).save();
+      //r.messages = [...r.messages, m];
+      console.log('first');
+      r.messages.push(m);
+      (await r).save();
+    });
+
+    
+  });
+
+
+  await Conversation.findOne({user: friendId, friend: userId})
+  .populate({
+    strictPopulate: false,
+    path:"messages",
+    model: 'Message'
+  }).exec().then(async(r:any) => {
+    const msg = await Message.create({
+      message: message,
+      from: new mongoose.Types.ObjectId(userId),
+      to: new mongoose.Types.ObjectId(friendId),
+      conversation: new mongoose.Types.ObjectId()
+    }).then(async(m) => {
+      (await m).save();
+      r.messages.push(m);
+      console.log('second');
+      (await r).save();
+    });
+
+    
+  });
+
+
+}
+
+
+
+
+//////////////////////////////////////////////////////////////
+
+
+
+export const sAddMessage = async(userId, friendId, message) => {
  
 
   

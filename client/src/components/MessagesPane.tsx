@@ -10,6 +10,7 @@ import { ChatProps, MessageProps } from '../types';
 import idContext from '../context/getMyIdContext';
 import messagesContext from 'context/messagesContext';
 import {SocketContext} from '../context/socketContext';
+import { addMessageToSession } from './signal-functions';
 
 // type MessagesPaneProps = {
 //   chat: ChatProps;
@@ -17,7 +18,20 @@ import {SocketContext} from '../context/socketContext';
 
 export default function MessagesPane(props) {
   let msgs:any = [];
-  const { chat, userSender, friendId, isFetched, isDataPrepared, selectedChat, prepareConvMessagesAndReverse} = props;
+  const {
+    chat, 
+    userSender, 
+    friendId, 
+    isFetched, 
+    isDataPrepared, 
+    selectedChat, 
+    prepareConvMessagesAndReverse, 
+    encryptAndSendMessage,
+    getSessionCipherForRecipient,
+    sendMessage,
+    adiStore,
+    brunhildeStore,
+  } = props;
   const {messages, setMessages} = React.useContext(messagesContext);
   messages[0]?.messages === undefined ? msgs.push({}) : msgs.push(...messages[0]?.messages);
   const [chatMessages, setChatMessages] = React.useState(chat);
@@ -45,11 +59,6 @@ export default function MessagesPane(props) {
 
   const fetchMessages = React.useCallback((page) => {
     const chunkHandler = (r) => {
-      // setChatMessages(() => {
-      //   const updatedMessages = [...chat.messages, chat.messages.unshift(...r[0].messages)];
-      //   return updatedMessages;
-      // });
-      // console.log(chat.messages);
       prepareConvMessagesAndReverse(r)
       setLoadingMsgs(false);
     }
@@ -61,6 +70,7 @@ export default function MessagesPane(props) {
         userId: myId,
         conversation_id: chat.id
       };
+      console.log(chat);
       socket.emit("getChunkOfConversation", obj);
       socket.on("getChunkOfConversation",chunkHandler);
 
@@ -128,7 +138,7 @@ export default function MessagesPane(props) {
         onScroll={handleScroll}
       >
         <Stack spacing={2} justifyContent="flex-end">
-          {isFetched && isDataPrepared && (chat.length !== 0) ? chat.messages?.map((message, index: number) => {
+          {isFetched && isDataPrepared && selectedChat && friendId && (chat.length !== 0) ? chat.messages?.map((message, index: number) => {
             let isYou;
             if(message.sender?._id !== myId){ isYou = 'You'}
             return (
@@ -153,7 +163,7 @@ export default function MessagesPane(props) {
       {isFetched && isDataPrepared && friendId && <MessageInput
         textAreaValue={textAreaValue}
         setTextAreaValue={setTextAreaValue}
-        onSubmit={() => {
+        onSubmit={async() => {
 
 
           function formatDate(date) {
@@ -187,7 +197,20 @@ export default function MessagesPane(props) {
               friendId:friendId,
               message:textAreaValue
             }
-            socket.emit("addMessage", obj);
+            // const sendTo = friendId;
+            // const to = sendTo === myId? friendId : myId;
+            //const from = to === "adalheid" ? "brünhild" : "adalheid";
+            const to = friendId === "66bb6e066d22021443d8b064" ? "brünhild" : "adalheid";
+            console.log(to);
+            addMessageToSession(to, obj.message);
+            const cipher = getSessionCipherForRecipient(to);
+            const ciphertext = await cipher.encrypt(
+              new TextEncoder().encode(obj.message).buffer
+            );
+            obj.message = ciphertext;
+            //addMessageToSession(to, ciphertext);
+            //sendMessage(myId, friendId, obj.message)
+            socket.emit("sAddMessage", obj);
 
         }}
       />}
