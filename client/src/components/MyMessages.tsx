@@ -21,25 +21,8 @@ import messagesContext from 'context/messagesContext';
 
 
 
-import { addMessageToSession, startSession } from './signal-functions';
-import { currentSessionSubject, sessionForRemoteUser, sessionListSubject } from './state'
-import { useObservable } from './hooks'
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 import {
-  KeyHelper,
   SignedPublicPreKeyType,
   SignalProtocolAddress,
   SessionBuilder,
@@ -136,12 +119,11 @@ const adalheidAddress = new SignalProtocolAddress("adalheid", 1);
 const brunhildeAddress = new SignalProtocolAddress("brünhild", 1);
 
 export default function MyProfile() {
-  const session = useObservable(currentSessionSubject, null)
+  // const session = useObservable(currentSessionSubject, null)
   const {myId, setMyId} = useContext(idContext);
   const [friendId, setFriendId] = React.useState<string>();
   const {messages, setMessages} = useContext(messagesContext);
-
-
+  const [myIdentity,setMyIdentity] = React.useState({});
 
 
 
@@ -194,59 +176,21 @@ export default function MyProfile() {
     setMessagesx(prev => [...prev, msg]);
   };
 
-  // React.useEffect(() => {
-  //   if (processing) {
-  //     return;
-  //   }
-
-  //   const getReceivingSessionCipherForRecipient = (to: string) => {
-  //     // send from Brünhild to Adalheid so use his store
-  //     const store = to === "brünhild" ? brunhildeStore : adiStore;
-  //     const address = to === "brünhild" ? adalheidAddress : brunhildeAddress;
-  //     return new SessionCipher(store, address);
-  //   };
-
-  //   const doProcessing = async () => {
-      
-  //     // const cipher = getReceivingSessionCipherForRecipient(nextMsg.to);
-  //     // const processed = await readMessage(nextMsg, cipher);
-  //     if(selectedChat.length !== 0 && isDataPrepared && myId && friendId && messages && (toggle === true || toggle === false)) {
-  //       // const to = friendId === "66bb6d706d22021443d8b061" ? "brünhild" : "adalheid";
-  //       // const from = to === "adalheid" ? "brünhild" : "adalheid";
-        
-        
-
-  //       await messages.forEach(async e => {
-  //         await e.messages.forEach(async x => {
-  //           let cipher = await getReceivingSessionCipherForRecipient("brünhild");
-  //           let processed = await readMessage(x.content, cipher);
-  //           console.log(processed.messageText);
-  //         })
-  //       })
-  //     }
-  //     setProcessing(true);
-  //   };
-  //   doProcessing().then(() => {
-  //     setProcessing(false);
-  //     console.log(processedMessages);
-  //   }).catch(err => console.error(err));
-  // }, [messages]);
-
 
 
 
 
   const readMessage = async (msg, cipher: SessionCipher) => {
     let plaintext: ArrayBuffer = new Uint8Array().buffer;
-    if (msg.message.type === 3) {
+    if (msg.type === 3) {
       plaintext = await cipher.decryptPreKeyWhisperMessage(
-        msg.message.body!,
+        msg.body!,
         "binary"
       );
       setHasSession(true);
-    } else if (msg.message.type === 1) {
+    } else if (msg.type === 1) {
       plaintext = await cipher.decryptWhisperMessage(
-        msg.message.body!,
+        msg.body!,
         "binary"
       );
     }
@@ -300,47 +244,17 @@ export default function MyProfile() {
     
   };
 
-
-  // const createAdalheidIdentity = async (r) => {
-  //   await createID(myId, adiStore, r);
-  //   console.log({ adiStore });
-  //   setAHasIdentity(true);
-  // };
-
   const createAdalheidIdentity = async (r) => {
     await createID("adalheid", adiStore, r);
     console.log({ adiStore });
     setAHasIdentity(true);
   };
 
-  // const createBrunhildeIdentity = async (r) => {
-  //   await createID(friendId as string, brunhildeStore, r);
-  //   console.log({ brunhildeStore });
-  //   setBHasIdentity(true);
-  // };
-
   const createBrunhildeIdentity = async (r) => {
     await createID("brünhild", brunhildeStore, r);
     setBHasIdentity(true);
   };
 
-  const starterMessageBytes = Uint8Array.from([
-    0xce,
-    0x93,
-    0xce,
-    0xb5,
-    0xce,
-    0xb9,
-    0xce,
-    0xac,
-    0x20,
-    0xcf,
-    0x83,
-    0xce,
-    0xbf,
-    0xcf,
-    0x85,
-  ]);
 
   const startSessionWithBrunhilde = async () => {
     // get Brünhild' key bundle
@@ -357,7 +271,7 @@ export default function MyProfile() {
     // identityKey differs from a previously seen identity for this address.
     console.log("adalheid processing prekey");
     await sessionBuilder.processPreKey(brunhildeBundle!);
-    startSession("brünhild")
+    //startSession("brünhild")
     // // Now we can send an encrypted message
     // const adalheidSessionCipher = new SessionCipher(adiStore, recipientAddress);
     // const ciphertext = await adalheidSessionCipher.encrypt(
@@ -414,63 +328,31 @@ export default function MyProfile() {
 ////////////////////////////////////
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const getSessionCipherForRecipient = (to: string) => {
   // send from Brünhild to myId so use his store
   const store = to === myId ? brunhildeStore : adiStore;
   const address = to === myId ? adalheidAddress : brunhildeAddress;
   return new SessionCipher(store, address);
+};
+
+
+const getReceivingSessionCipherForRecipient = (to: string) => {
+  // send from Brünhild to Adalheid so use his store
+  const store = to === "brünhild" ? brunhildeStore : adiStore;
+  const address = to === "brünhild" ? adalheidAddress : brunhildeAddress;
+  return new SessionCipher(store, address);
+};
+
+
+
+const doProcessing = async (ta) => {
+  console.log(ta[0].messages);
+  let m = ta[0].messages.forEach(async e => {
+    let cipher = await getReceivingSessionCipherForRecipient("brünhild");
+    let msg = await readMessage(e.content, cipher);
+    e.content = msg.messageText;
+  });
+  return m;
 };
 
   const socket = useContext(SocketContext);
@@ -481,382 +363,14 @@ const getSessionCipherForRecipient = (to: string) => {
   const [enableConversationFetching, setIsConversationFetched] = React.useState<boolean>(false);
   const [toggle, setToggle] = React.useState(true);
 
-  React.useEffect(() => {
-    if (processing) {
-      return;
-    }
-
-    const getReceivingSessionCipherForRecipient = (to: string) => {
-      // send from Brünhild to Adalheid so use his store
-      const store = to === "brünhild" ? brunhildeStore : adiStore;
-      const address = to === "brünhild" ? adalheidAddress : brunhildeAddress;
-      return new SessionCipher(store, address);
-    };
-    // const doProcess = async () => {
-    //   if(messages) {
-    //     return await messages.forEach(async e => {
-    //       e?.messages?.forEach(async x => {
-    //         sendMessage("brünhild", "adalheid", x.content);
-    //       })
-    //     })
-    //   }
-    // }
-    
-    const doProcessing = async () => {
-      let i = 0;
-      while (messagesx.length > 0) {
-        let nextMsg = messagesx.shift();
-        if (!nextMsg) {
-          continue;
-        }
-        // console.log(nextMsg);
-        if( i >= 0) {
-          
-
-        startSessionWithBrunhilde();
-        
-        const session : ChatSession= sessionForRemoteUser(nextMsg.to) || {
-          remoteUsername: nextMsg.to,
-          messages: [],
-      }
-      
-  
-      const sessionList = [...sessionListSubject.value]
-      sessionList.unshift(session)
-      sessionListSubject.next(sessionList)
-  
-  
-      let cm: ProcessedChatMessage | null = null
-
-      let cipher = await getReceivingSessionCipherForRecipient(nextMsg.to);
-      let plaintext: ArrayBuffer = new Uint8Array().buffer;
-      if (nextMsg.message.type === 3) {
-        plaintext = await cipher.decryptPreKeyWhisperMessage(
-          nextMsg.message.body!,
-          "binary"
-        );
-
-
-      } else if (nextMsg.message.type === 1) {
-        plaintext = await cipher.decryptWhisperMessage(
-          nextMsg.message.body!,
-          "binary"
-        );
-      }
-
-      let stringPlaintext = new TextDecoder().decode(new Uint8Array(plaintext));
-      addMessageToSession(nextMsg.to, stringPlaintext)
-      console.log(stringPlaintext);
-      i++;
-        }
-      }
-
-
-    };
-
-    
-    setProcessing(true);
-    doProcessing().then(() => {
-      setProcessing(false);
-    }).catch(err => console.log(err));
-
-  }, [ messagesx, toggle]);
-  
-
-  const hasSelectedChatChanged = useCompare(selectedChat);
-
-
-
-
-
-//   React.useEffect(() => {
-
-//     const idHand = async(r) => {
-      
-//       let createIdentity = async () => {
-        
-//         //await createBrunhildeIdentity();
-//         return await createMyIdentity(r);
-//       }
-  
-//       await createIdentity().catch(err => console.log(err))
-//     }
-//     socket.emit("s");
-//     socket.on("s", idHand);
-//     return () => {
-//       socket.off("s",idHand);
-//     };
-//   }, [socket])
-
-
-
-//   React.useEffect(() => {
-
-//     const idHand = async(r) => {
-      
-//       let createIdentity = async () => {
-        
-//         //await createBrunhildeIdentity();
-//         return await createBrunhildeIdentity(r);
-//       }
-  
-//       await createIdentity().catch(err => console.log(err))
-//     }
-//     socket.emit("t");
-//     socket.on("t", idHand);
-//     return () => {
-//       socket.off("t",idHand);
-//     };
-//   }, [socket])
-
-
-
-
-// React.useEffect(() => {
-//   if(myId) {
-//     createAdalheidIdentity();
-//     startSessionWithBrunhilde();
-//     console.log('inside');
-//   }
-//   }, [myId]);
-
-
-
-
-
-  // React.useEffect(() => {
-  //   console.log(processedMessages)
-  // }, [messagesx]);
-
-
-  // React.useEffect(() => {
-  //   let obj = {
-  //     userId: "66bb6e066d22021443d8b064",
-  //     friendId: "66bb6d706d22021443d8b061"
-  //   }
-  //   socket.emit("addFriend", obj);
-  // }, []);
-
-  // React.useEffect(() => {
-  //   if (processing) {
-  //     return;
-  //   }
-
-  //   const getReceivingSessionCipherForRecipient = (to: string) => {
-  //     // send from Brünhild to Adalheid so use his store
-  //     const store = to === friendId ? brunhildeStore : adiStore;
-  //     const address = to === friendId ? adalheidAddress : brunhildeAddress;
-  //     return new SessionCipher(store, address);
-  //   };
-
-  //   // const doProcessing = async () => {
-  //   //   while (messagesx.length > 0) {
-  //   //     const nextMsg = messagesx.shift();
-  //   //     if (!nextMsg) {
-  //   //       continue;
-  //   //     }
-  //   //     const cipher = getReceivingSessionCipherForRecipient(nextMsg.to);
-  //   //     const processed = await readMessage(nextMsg, cipher);
-  //   //     processedMessages.push(processed as any);
-  //   //   }
-  //   //   setMessagesx([...messagesx]);
-  //   //   setProcessedMessages([...processedMessages]);
-  //   // };
-
-
-  //   const doProcessing = async () => {
-  //     if(selectedChat.length !== 0 && isDataPrepared && myId && friendId && messages) {
-  //       let cipher = await getReceivingSessionCipherForRecipient(messages[0].sender._id);
-  //         let processed = await readMessage(messages[0].messages[0].content, cipher);
-  //         setMessagesx([processed.messageText])
-  //           console.log('PM', processed.messageText);
-  //           console.log('ASOIGNOPSINGOSDINOISDNGOISENGSEIONG')
-       
-  //     }
-  //   }
-  //   setProcessing(true);
-  //   doProcessing().then(() => {
-  //     setProcessing(false);
-  //     console.log(messagesx);
-  //   });
-  // }, [adiStore, brunhildeStore, isDataPrepared, messages, toggle]);
-
-
-
-
-
-  //   React.useEffect(() => {
-
-  //   const sidHand = async(rsp) => {
-  //     await createMyIdentity(rsp);
-  //   }
-  //   if(myId) {
-  //     socket.emit("sxGetMyId");
-  //     socket.on("sxGetMyId",sidHand);
-  //   }
-  //   return () => {
-  //     socket.off("sxGetMyId",sidHand);
-  //   };
-  // }, [socket, myId])
-
-
-
-
-  // React.useEffect(() => {
-
-  //   const idHand = async(r) => {
-  //   await createBrunhildeIdentity(r);
-  //     //start session fater clicking chat contact
-  //   }
-  //   if(friendId) {
-  //     socket.emit("sGetFriendId",friendId);
-  //     socket.on("sGetFriendId", idHand);
-  //   }
-  //   return () => {
-  //     socket.off("sGetFriendId",idHand);
-  //   };
-  // }, [socket, myId, toggle])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // React.useEffect(() => {
-  //   const sidHand = async(rsp) => {
-  //     //1 await createAdalheidIdentity(rsp);
-  //     if(myId === "66bb6e066d22021443d8b064"){
-  //       console.log('inside#2');
-  //       await createBrunhildeIdentity(rsp);
-  //     }
-  //     if(myId === "66bb6d706d22021443d8b061") {
-  //       console.log('inside#1');
-  //       await createAdalheidIdentity(rsp);
-  //     }
-  //   }
-  //   if(hasSession || !(aHasIdentity && bHasIdentity)) {
-  //     //createBrunhildeIdentity();
-  //     if(myId) {
-  //       socket.emit("sxGetMyId");
-  //       socket.on("sxGetMyId",sidHand);
-  //     }
-
-  //   }
-  //   return () => {
-  //     socket.off("sxGetMyId",sidHand);
-  //   };
-  // }, [hasSession, aHasIdentity, bHasIdentity, myId, toggle]);
-
-
-  //   React.useEffect(() => {
-
-  //   const idHand = async(r) => {
-  //     if(friendId === "66bb6e066d22021443d8b064") {
-  //       console.log('inside#1');
-  //       await createBrunhildeIdentity(r);
-  //       await startSessionWithAdalheid();
-  //     }
-  //     if( friendId=== "66bb6d706d22021443d8b061") {
-  //       console.log('inside#2');
-  //       await createAdalheidIdentity(r);
-  //       await startSessionWithBrunhilde();
-  //     }
-  //   //1 await startSessionWithBrunhilde();
-  //   }
-  //   if(friendId) {
-  //     socket.emit("sGetFriendId",friendId);
-  //     socket.on("sGetFriendId", idHand);
-  //   }
-  //   return () => {
-  //     socket.off("sGetFriendId",idHand);
-  //   };
-  // }, [toggle])
-
-
-  // React.useEffect(() => {
-  //   const sidHand = async(rsp) => {
-  //     await createAdalheidIdentity(rsp);
-  //   }
-  //   if(hasSession || !(aHasIdentity && bHasIdentity)) {
-  //     //createBrunhildeIdentity();
-  //     if(myId) {
-  //       socket.emit("sxGetMyId");
-  //       socket.on("sxGetMyId",sidHand);
-  //     }
-
-  //   }
-  //   return () => {
-  //     socket.off("sxGetMyId",sidHand);
-  //   };
-  // }, [hasSession, aHasIdentity, bHasIdentity, myId]);
-
-
-  //   React.useEffect(() => {
-
-  //   const idHand = async(r) => {
-  //   await createBrunhildeIdentity(r);
-  //     //start session fater clicking chat contact
-  //     //   const timer = setTimeout(() =>{
-       
-  // //     //startSessionWithAdalheid();
-  // //   }, 3000);
-  //   await startSessionWithBrunhilde();
-  //   }
-  //   if(friendId) {
-  //     socket.emit("sGetFriendId",friendId);
-  //     socket.on("sGetFriendId", idHand);
-  //   }
-  //   return () => {
-  //     socket.off("sGetFriendId",idHand);
-  //   };
-  // }, [socket, myId, toggle])
-
 
 
 
     React.useEffect(() => {
     const sidHand = async(rsp) => {
-      //1 await createAdalheidIdentity(rsp);
-      if(myId === "66bb6e066d22021443d8b064"){
-        console.log('inside#2, myId');
-        await createBrunhildeIdentity(rsp);
-      }
-      if(myId === "66bb6d706d22021443d8b061") {
-        console.log('inside#1, myId');
-        await createAdalheidIdentity(rsp);
-      }
+      setMyIdentity(rsp);
     }
     if(hasSession || !(aHasIdentity && bHasIdentity)) {
-      //createBrunhildeIdentity();
       if(myId) {
         socket.emit("sxGetMyId");
         socket.on("sxGetMyId",sidHand);
@@ -876,21 +390,15 @@ const getSessionCipherForRecipient = (to: string) => {
     React.useEffect(() => {
 
     const idHand = async(r) => {
-      if(friendId === "66bb6e066d22021443d8b064") {
-        console.log('inside#1');
-        // await createBrunhildeIdentity(r);
-        // await startSessionWithAdalheid();
-
-            await createBrunhildeIdentity(r);
-            await startSessionWithBrunhilde();
-
-      }
-      if( friendId=== "66bb6d706d22021443d8b061") {
-        console.log('inside#2');
+      if(myIdentity["baseKeyId"] < r.baseKeyId) {
+        await createAdalheidIdentity(myIdentity); 
+        await createBrunhildeIdentity(r);
+        await startSessionWithBrunhilde();
+      } else {
+        await createBrunhildeIdentity(myIdentity);
         await createAdalheidIdentity(r);
         await startSessionWithBrunhilde();
       }
-    //1 await startSessionWithBrunhilde();
     }
     if(friendId) {
       socket.emit("sGetFriendId",friendId);
@@ -900,154 +408,6 @@ const getSessionCipherForRecipient = (to: string) => {
       socket.off("sGetFriendId",idHand);
     };
   }, [friendId])
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // React.useEffect(() => {
-  //   const sidHand = async(rsp) => {
-  //     //1 await createAdalheidIdentity(rsp);
-      
-  //     if(gTo) {
-  //       console.log('GTO', gTo);
-  //       createBrunhildeIdentity(rsp);
-  //     } else {
-  //       createAdalheidIdentity(rsp);
-  //     }
-  //   }
-  //   if(hasSession || !(aHasIdentity && bHasIdentity)) {
-  //     //createBrunhildeIdentity();
-  //     if(myId) {
-  //       socket.emit("sxGetMyId");
-  //       socket.on("sxGetMyId",sidHand);
-  //     }
-
-  //   }
-  //   return () => {
-  //     socket.off("sxGetMyId",sidHand);
-  //   };
-  // }, [hasSession, aHasIdentity, bHasIdentity, myId]);
-
-
-  //   React.useEffect(() => {
-
-  //   const idHand = async(r) => {
-  //   //1 await createBrunhildeIdentity(r);
-  //   if(gTo) {
-  //     console.log('GTO', gTo);
-  //     await createAdalheidIdentity(r);
-
-  //     startSessionWithAdalheid();
-  //   } else {
-  //     await createBrunhildeIdentity(r);
-  //     startSessionWithBrunhilde();
-  //   }
-  //   //1 await startSessionWithBrunhilde();
-  //   }
-  //   if(friendId) {
-  //     socket.emit("sGetFriendId",friendId);
-  //     socket.on("sGetFriendId", idHand);
-  //   }
-  //   return () => {
-  //     socket.off("sGetFriendId",idHand);
-  //   };
-  // }, [socket, myId, toggle])
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // React.useEffect(() => {
-  //   const timer = setTimeout(() =>{
-       
-  //     //startSessionWithAdalheid();
-  //   }, 3000);
-  //   return () => clearTimeout(timer);
-  // }, []);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1096,25 +456,6 @@ r.forEach(e => {
   }
 });
 
-
-
-
-
-
-// const doProcessing = async () => {
-//   tempArr.forEach(async e => {
-//     e.messages.forEach(async x => {
-//       let cipher = await getReceivingSessionCipherForRecipient(x.sender._id);
-//       let processed = await readMessage(x.content, cipher);
-//       x.content = processed.messageText;
-//     })
-  
-//   })
-// }
-
-// await doProcessing().then(() => {
-
-//   });
 
 
   setMessages(tempArr)
@@ -1192,79 +533,79 @@ r.forEach(e => {
 });
 
 
+const doProcessing = async (arr) => {
+  arr.forEach(async e => {
+    e.messages.forEach(async x => {
 
 
 
+      startSessionWithBrunhilde();
+  
 
-let tempSelChat:any = [];
-for(let i = 0; i < tempArr.length; i++) {
-  if(selectedChat[i].id === tempArr[i].id) {
-    tempSelChat = [tempArr[i]];
-  }
+      let cipher = await getReceivingSessionCipherForRecipient("brünhild");
+      let plaintext: ArrayBuffer = new Uint8Array().buffer;
+      if ( x.content.type === 3) {
+        plaintext = await cipher.decryptPreKeyWhisperMessage(
+          x.content.body!,
+          "binary"
+        );
+
+
+      } else if (x.content.type === 1) {
+        plaintext = await cipher.decryptWhisperMessage(
+          x.content.body!,
+          "binary"
+        );
+      }
+
+      let stringPlaintext = new TextDecoder().decode(new Uint8Array(plaintext));
+      x.content = stringPlaintext;
+
+    })
+  
+  })
+  return arr;
 }
 
-  
-tempArr.sort(dynamicSort("id"));
-
-
-for(let i = 0; i < messages.length; i++) {
-  if(tempSelChat.length !== 0 && messages.length !== 0) {
-    if(tempSelChat[0].id !== messages[i].id) {
-
-      tempArr.push(messages[i]);
-      tempArr.sort(dynamicSort("id"));
+await doProcessing(tempArr).then(r => {
+  console.log(tempArr);
+  console.log(r);
+  //tempArr = r;
+  let tempSelChat:any = [];
+  for(let i = 0; i < r.length; i++) {
+    if(selectedChat[i].id === r[i].id) {
+      tempSelChat = [r[i]];
     }
-  } else {
-    tempSelChat.push([tempArr[i]])
   }
-}
-
-
-
-
-
-// const doProcessing = async () => {
-//   await tempArr.forEach(async e => {
-//     e.messages.forEach(async x => {
-//       let cipher = await getReceivingSessionCipherForRecipient(x.sender._id);
-//       let processed = await readMessage(x.content, cipher);
-//       x.content = processed.messageText;
-//     })
   
-//   })
-  
-//   await tempSelChat.forEach(async e => {
-//     e.messages.forEach(async x => {
-//       let cipher = await getReceivingSessionCipherForRecipient(x.sender._id);
-//       let processed = await readMessage(x.content, cipher);
-//       x.content = processed.messageText;
-//     })
-  
-//   })
-
-
-// }
-
-// await doProcessing().then(() => {
-
-
-
     
-//   });
-
-  tempArr.sort(dynamicSort("id"));
-
-  let currChat = messages.find(e => e.id === tempSelChat[0].id);
-  let currTempArr = tempArr.find(e => e.id === tempSelChat[0].id);
-
-  // currChat.messages.forEach(async e => {
-  //   let cipher = await getReceivingSessionCipherForRecipient(currChat._id);
-  //   let processed = await readMessage(e.content, cipher);
-  //   e.content = processed.messageText
-  // })
+  r.sort(dynamicSort("id"));
   
   
-  if(currChat) currChat.messages = currTempArr.messages;
+  for(let i = 0; i < messages.length; i++) {
+    if(tempSelChat.length !== 0 && messages.length !== 0) {
+      if(tempSelChat[0].id !== messages[i].id) {
+  
+        r.push(messages[i]);
+        r.sort(dynamicSort("id"));
+      }
+    } else {
+      tempSelChat.push([r[i]])
+    }
+  }
+  
+    r.sort(dynamicSort("id"));
+  
+    let currChat = messages.find(e => e.id === tempSelChat[0].id);
+    let currTempArr = r.find(e => e.id === tempSelChat[0].id);
+    
+    
+    if(currChat) currChat.messages = currTempArr.messages;
+})
+
+
+
+
 
 
 
@@ -1317,9 +658,6 @@ r.forEach(e => {
       } else {
         tempObj.sender = x.to
       }
-      let to = tempObj2.sender["_id"] === "66bb6d706d22021443d8b061" ? "brünhild" : "adalheid";
-      let from = to === "adalheid" ? "brünhild" : "adalheid";
-      sendMessage(to, from, x.message);
       tempObj2.unread = false;
       tempObj.messages.push(tempObj2);
       tempObj2 = { id: '',
@@ -1339,65 +677,83 @@ r.forEach(e => {
 });
 
 
+const doProcessing = async (arr) => {
+  arr.forEach(async e => {
+    e.messages.forEach(async x => {
 
+
+
+      startSessionWithBrunhilde();
+  
+
+      let cipher = await getReceivingSessionCipherForRecipient("brünhild");
+      let plaintext: ArrayBuffer = new Uint8Array().buffer;
+      if ( x.content.type === 3) {
+        plaintext = await cipher.decryptPreKeyWhisperMessage(
+          x.content.body!,
+          "binary"
+        );
+
+
+      } else if (x.content.type === 1) {
+        plaintext = await cipher.decryptWhisperMessage(
+          x.content.body!,
+          "binary"
+        );
+      }
+
+      let stringPlaintext = new TextDecoder().decode(new Uint8Array(plaintext));
+      x.content = stringPlaintext;
+
+    })
+  
+  })
+  return arr;
+}
+
+await doProcessing(tempArr).then((r) => {
+  setMessages((prev) => [...prev]);
 
 let tempSelChat:any = [];
-for(let i = 0; i < tempArr.length; i++) {
-  if(selectedChat[i].id === tempArr[i].id) {
-    tempSelChat = [tempArr[i]];
+for(let i = 0; i < r.length; i++) {
+  if(selectedChat[i].id === r[i].id) {
+    tempSelChat = [r[i]];
   }
 }
 
   
-tempArr.sort(dynamicSort("id"));
+r.sort(dynamicSort("id"));
 
 
 for(let i = 0; i < messages.length; i++) {
   if(tempSelChat.length !== 0 && messages.length !== 0) {
     if(tempSelChat[0].id !== messages[i].id) {
 
-      tempArr.push(messages[i]);
-      tempArr.sort(dynamicSort("id"));
+      r.push(messages[i]);
+      r.sort(dynamicSort("id"));
     }
   } else {
-    tempSelChat.push([tempArr[i]])
+    tempSelChat.push([r[i]])
   }
 }
 
-// const doProcessing = async () => {
-//   tempArr.forEach(async e => {
-//     e.messages.forEach(async x => {
-//       let cipher = await getReceivingSessionCipherForRecipient(x.sender._id);
-//       let processed = await readMessage(x.content, cipher);
-//       x.content = processed.messageText;
-//     })
-  
-//   })
-  
-//   tempSelChat.forEach(async e => {
-//     e.messages.forEach(async x => {
-//       let cipher = await getReceivingSessionCipherForRecipient(x.sender._id);
-//       let processed = await readMessage(x.content, cipher);
-//       x.content = processed.messageText;
-//     })
-  
-//   })
-// }
-
-// await doProcessing().then(() => {
-
-//   });
-  tempArr.sort(dynamicSort("id"));
-  setMessages(tempArr);
-  setSelectedChat(tempSelChat);
 
 
 
+
+
+r.sort(dynamicSort("id"));
+
+console.log(tempSelChat);
+setSelectedChat(tempSelChat);
+
+
+})
 
 
 }
 
-const rfrsh = ({message: r, user}) => {
+const rfrsh = async({message: r, user}) => {
 
 function formatDate(date) {
   var d = new Date(date),
@@ -1422,23 +778,58 @@ function uuidv4() {
 
 const newId = uuidv4();
 const newIdString = newId.toString();
+console.log(messages);
 let fndMsg =  messages.find(e => e.sender._id === user);
 let restMsgs = messages.find(e => e.sender._id !== user);
 let result:any = [];
-fndMsg.messages.push({
-  id: newIdString,
-  sender:fndMsg.sender,
-  content: r,
-  timestamp: formatDate(new Date),
-});
 
 
-result.push(fndMsg);
-if(restMsgs !== undefined) result.push(restMsgs);
-result.sort(dynamicSort("id"));
+const doProcessing = async(z) => {
+      startSessionWithBrunhilde();
+  
 
-//setSelectedChat(result);
-setMessages(result);
+      let cipher = await getReceivingSessionCipherForRecipient("brünhild");
+      let plaintext: ArrayBuffer = new Uint8Array().buffer;
+      if ( z.type === 3) {
+        plaintext = await cipher.decryptPreKeyWhisperMessage(
+          z.body!,
+          "binary"
+        );
+
+
+      } else if (z.type === 1) {
+        plaintext = await cipher.decryptWhisperMessage(
+          z.body!,
+          "binary"
+        );
+      }
+
+      let stringPlaintext = new TextDecoder().decode(new Uint8Array(plaintext));
+      z = stringPlaintext;
+
+      return z;
+}
+
+
+
+await doProcessing(r).then(s => {
+  fndMsg.messages.push({
+    id: newIdString,
+    sender:fndMsg.sender,
+    content: s,
+    timestamp: formatDate(new Date),
+  });
+  
+  
+  result.push(fndMsg);
+  if(restMsgs !== undefined) result.push(restMsgs);
+  result.sort(dynamicSort("id"));
+  
+  //setSelectedChat(result);
+  
+  
+  setMessages(result);
+})
 
 
 }
@@ -1466,9 +857,6 @@ React.useEffect(() => {
   }
   if(myId && (toggle === true || toggle === false)) {
     //can be a error below
-    if(session) {
-      console.log(session);
-    }
 
     let currentChatId = messages.find(e => e?.id === selectedChat[0]?.id)?.id;
     let userObj = {

@@ -10,7 +10,6 @@ import { ChatProps, MessageProps } from '../types';
 import idContext from '../context/getMyIdContext';
 import messagesContext from 'context/messagesContext';
 import {SocketContext} from '../context/socketContext';
-import { addMessageToSession } from './signal-functions';
 
 // type MessagesPaneProps = {
 //   chat: ChatProps;
@@ -62,8 +61,8 @@ export default function MessagesPane(props) {
       prepareConvMessagesAndReverse(r)
       setLoadingMsgs(false);
     }
-    if(isFetched && isDataPrepared && selectedChat && friendId && myId && page >= 1) {
-
+    if(isFetched && isDataPrepared && selectedChat && friendId && myId && page >= 2) {
+      console.log('INSINSINSISNIS');
       setLoadingMsgs(true);
       let obj = {
         page: page,
@@ -95,7 +94,7 @@ export default function MessagesPane(props) {
     if (div.scrollHeight + div.scrollTop <= div.clientHeight+1 && !loadingMsgs) {
       setPage(prevPage => prevPage + 1);
       console.log('NOW');
-      div.scrollTop += 300;
+      div.scrollTop += 50;
       
     }
     if(div.scrollTop === 0) {
@@ -202,7 +201,7 @@ export default function MessagesPane(props) {
             //const from = to === "adalheid" ? "brünhild" : "adalheid";
             const to = friendId === "66bb6e066d22021443d8b064" ? "brünhild" : "adalheid";
             console.log(to);
-            addMessageToSession(to, obj.message);
+            //addMessageToSession(to, obj.message);
             const cipher = getSessionCipherForRecipient(to);
             const ciphertext = await cipher.encrypt(
               new TextEncoder().encode(obj.message).buffer
