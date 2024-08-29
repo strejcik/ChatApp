@@ -20,6 +20,7 @@ import { toggleMessagesPane } from '../utils';
 export default function ChatsPane(props) {
   const { chats, setSelectedChat, selectedChatId, setFriendId, isFetched, isDataPrepared, friendId, prepareConvMessages, enableConversationFetching, setIsConversationFetched, setToggle, toggle} = props;
 
+
   function uuidv4() {
     return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
       (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)
@@ -103,9 +104,7 @@ export default function ChatsPane(props) {
             isFetched={isFetched}
             isDataPrepared={isDataPrepared}
             key={uuidv4()}
-            messages={chat.messages}
-            sender={chat.sender}
-            id={chat.id}
+            {...chat}
             setSelectedChat={setSelectedChat}
             selectedChatId={selectedChatId}
             setFriendId={setFriendId}

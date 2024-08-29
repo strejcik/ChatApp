@@ -30,6 +30,7 @@ export default function MessagesPane(props) {
     sendMessage,
     adiStore,
     brunhildeStore,
+    aldOrBrun
   } = props;
   const {messages, setMessages} = React.useContext(messagesContext);
   messages[0]?.messages === undefined ? msgs.push({}) : msgs.push(...messages[0]?.messages);
@@ -53,58 +54,57 @@ export default function MessagesPane(props) {
 
 
 
-  
+  //COMMENTED CODE BELOW IS RESPONSIBLE OF FETCHING MESSAGES IN CHUNKS
+  //IT'S NOT IMPLEMENTED YET
+
+  // const fetchMessages = React.useCallback((page) => {
+  //   const chunkHandler = (r) => {
+  //     prepareConvMessagesAndReverse(r)
+  //     setLoadingMsgs(false);
+  //   }
+  //   if(isFetched && isDataPrepared && selectedChat && friendId && myId && page >= 1 && chat.length >=25) {
+  //     setLoadingMsgs(true);
+  //     let obj = {
+  //       page: page,
+  //       userId: myId,
+  //       conversation_id: chat.id
+  //     };
+  //     console.log(chat);
+  //     socket.emit("getChunkOfConversation", obj);
+  //     socket.on("getChunkOfConversation",chunkHandler);
 
 
-  const fetchMessages = React.useCallback((page) => {
-    const chunkHandler = (r) => {
-      prepareConvMessagesAndReverse(r)
-      setLoadingMsgs(false);
-    }
-    if(isFetched && isDataPrepared && selectedChat && friendId && myId && page >= 2) {
-      console.log('INSINSINSISNIS');
-      setLoadingMsgs(true);
-      let obj = {
-        page: page,
-        userId: myId,
-        conversation_id: chat.id
-      };
-      console.log(chat);
-      socket.emit("getChunkOfConversation", obj);
-      socket.on("getChunkOfConversation",chunkHandler);
-
-
-    }
-    return () => {
-      socket.off("getChunkOfConversation",chunkHandler);
-    };
+  //   }
+  //   return () => {
+  //     socket.off("getChunkOfConversation",chunkHandler);
+  //   };
 
     
-  }, [myId, chat]);
+  // }, [myId, chat]);
 
-  React.useEffect(() => {
-    fetchMessages(page);
-  }, [page, fetchMessages]);
+  // React.useEffect(() => {
+  //   fetchMessages(page);
+  // }, [page, fetchMessages]);
 
-  const handleScroll = () => {
-    const div = scrollableDivRef.current;
-    console.log('ScrollHeight', div.scrollHeight);
-    console.log('ScrollTop', div.scrollTop);
-    console.log('ClientHeight', div.clientHeight);
-    if (div.scrollHeight + div.scrollTop <= div.clientHeight+1 && !loadingMsgs) {
-      setPage(prevPage => prevPage + 1);
-      console.log('NOW');
-      div.scrollTop += 50;
+  // const handleScroll = () => {
+  //   const div = scrollableDivRef.current;
+  //   console.log('ScrollHeight', div.scrollHeight);
+  //   console.log('ScrollTop', div.scrollTop);
+  //   console.log('ClientHeight', div.clientHeight);
+  //   if (div.scrollHeight + div.scrollTop <= div.clientHeight+1 && !loadingMsgs) {
+  //     setPage(prevPage => prevPage + 1);
+  //     console.log('NOW');
+  //     div.scrollTop += 50;
       
-    }
-    if(div.scrollTop === 0) {
+  //   }
+  //   if(div.scrollTop === 0) {
       
-      if(page > 1) {
-        setPage(prevPage => prevPage - 1);
-        div.scrollTop -= 1;
-      }
-    }
-  };
+  //     if(page > 1) {
+  //       setPage(prevPage => prevPage - 1);
+  //       div.scrollTop -= 1;
+  //     }
+  //   }
+  // };
 
 
 
@@ -134,7 +134,7 @@ export default function MessagesPane(props) {
           
         }}
         ref={scrollableDivRef}
-        onScroll={handleScroll}
+        //onScroll={handleScroll}
       >
         <Stack spacing={2} justifyContent="flex-end">
           {isFetched && isDataPrepared && selectedChat && friendId && (chat.length !== 0) ? chat.messages?.map((message, index: number) => {
@@ -196,19 +196,11 @@ export default function MessagesPane(props) {
               friendId:friendId,
               message:textAreaValue
             }
-            // const sendTo = friendId;
-            // const to = sendTo === myId? friendId : myId;
-            //const from = to === "adalheid" ? "brünhild" : "adalheid";
-            const to = friendId === "66bb6e066d22021443d8b064" ? "brünhild" : "adalheid";
-            console.log(to);
-            //addMessageToSession(to, obj.message);
-            const cipher = getSessionCipherForRecipient(to);
+            const cipher = getSessionCipherForRecipient("brünhild");
             const ciphertext = await cipher.encrypt(
               new TextEncoder().encode(obj.message).buffer
             );
             obj.message = ciphertext;
-            //addMessageToSession(to, ciphertext);
-            //sendMessage(myId, friendId, obj.message)
             socket.emit("sAddMessage", obj);
 
         }}

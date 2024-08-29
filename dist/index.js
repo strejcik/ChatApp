@@ -72,7 +72,11 @@ io.use(function (socket, next) {
         yield (0, index_1.sGetMyId)(s.decoded.userId).then(r => s.emit("sxGetMyId", r));
     }));
     s.on("sGetFriendId", (id) => __awaiter(void 0, void 0, void 0, function* () {
-        yield (0, index_1.sGetFriendId)(id).then(r => s.emit("sGetFriendId", r));
+        console.log(id);
+        yield (0, index_1.sGetFriendId)(id).then(r => {
+            console.log(r);
+            s.emit("sGetFriendId", r);
+        });
     }));
     s.on("sAddMessage", (d) => __awaiter(void 0, void 0, void 0, function* () {
         yield (0, index_1.sAddMessage)(d.userId, d.friendId, d.message).then(() => s === null || s === void 0 ? void 0 : s.to((0, socketFunctions_1.getUserSocket)(d.friendId)).emit('refreshMessages', { message: d.message, user: d.userId }));
@@ -101,13 +105,6 @@ io.use(function (socket, next) {
         yield (0, index_1.getMessages)(id.userId, id.friendId);
     }));
     s.on("addMessage", (d) => __awaiter(void 0, void 0, void 0, function* () {
-        // let response = await getConversationByFriendId(d.friendId, d.userId).then(r => { return r  });
-        // let responseObj;
-        // let response = await getConversations(d.friendId).then(r => { return r});
-        // responseObj = {
-        //   response,
-        //   message:d.message
-        // }
         yield (0, index_1.addMessage)(d.userId, d.friendId, d.message).then(() => s.to((0, socketFunctions_1.getUserSocket)(d.friendId)).emit('refreshMessages', { message: d.message, user: d.userId }));
     }));
     s.on("getConversations", (id) => __awaiter(void 0, void 0, void 0, function* () {
@@ -115,7 +112,7 @@ io.use(function (socket, next) {
         yield (0, index_1.getConversations)(id).then(r => s.emit("getConversations", r));
     }));
     s.on("getConversation", (id) => __awaiter(void 0, void 0, void 0, function* () {
-        // await getConversations(id);
+        //DISPLAY ONLY LAST 25 MESSAGES, CHANGE THE LOGIC IF YOU WANT TO DISPLAY ALL THE MESSAGES
         const page = 2;
         const limit = 25;
         const startIndex = (page - 1) * limit;
@@ -137,8 +134,6 @@ io.use(function (socket, next) {
         yield (0, index_1.getConversation)(d.userId, d.conversation_id).then(r => {
             let page = d.page;
             let limit = 25;
-            console.log(r);
-            console.log(d);
             let msgLength = r[0]["messages"].length;
             let endIndex = msgLength - (page - 1) * limit;
             let startIndex = Math.max(0, endIndex - limit);

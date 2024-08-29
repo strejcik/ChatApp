@@ -29,7 +29,6 @@ export default function ChatListItem(props) {
     setFriendId(sender._id);
     toggleMessagesPane();
   }
-  console.log(messages[0]?.content)
   return (
     <React.Fragment>
       <ListItem>
@@ -77,7 +76,7 @@ export default function ChatListItem(props) {
               textOverflow: 'ellipsis',
             }}
           >
-            {typeof messages[0]?.content !== 'object' && messages[0]?.content.toString()}
+            {typeof messages[0]?.content !== 'object' && messages[0]?.processed === true  && messages[0]?.content}
           </Typography>
         </ListItemButton>
       </ListItem>

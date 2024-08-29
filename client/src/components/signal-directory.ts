@@ -34,4 +34,11 @@ export class SignalDirectory{
         const { identityPubKey, signedPreKey, registrationId } = bundle
         return { identityKey: identityPubKey, signedPreKey, preKey: oneTimePreKey, registrationId }
     }
+
+    rm(address: string): DeviceType | undefined {
+        const bundle = this._data[address]
+        if(bundle) {
+            return undefined
+        }
+    }
 }

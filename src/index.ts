@@ -115,7 +115,11 @@ io.use(function(socket, next){
   });
 
   s.on("sGetFriendId", async(id) => {
-    await sGetFriendId(id).then(r => s.emit("sGetFriendId", r));
+    console.log(id);
+    await sGetFriendId(id).then(r => {
+      console.log(r);
+      s.emit("sGetFriendId", r)
+    });
   })
 
   s.on("sAddMessage", async(d) => {
@@ -155,13 +159,6 @@ io.use(function(socket, next){
   });
 
   s.on("addMessage", async(d) => {
-      // let response = await getConversationByFriendId(d.friendId, d.userId).then(r => { return r  });
-      // let responseObj;
-      // let response = await getConversations(d.friendId).then(r => { return r});
-      // responseObj = {
-      //   response,
-      //   message:d.message
-      // }
       await addMessage(d.userId, d.friendId, d.message).then(() => s.to(getUserSocket(d.friendId)).emit('refreshMessages', {message: d.message, user:d.userId}));
       
   });
@@ -172,7 +169,8 @@ io.use(function(socket, next){
   });
 
   s.on("getConversation", async(id) => {
-    // await getConversations(id);
+
+    //DISPLAY ONLY LAST 25 MESSAGES, CHANGE THE LOGIC IF YOU WANT TO DISPLAY ALL THE MESSAGES
     const page = 2;
     const limit = 25;
     const startIndex = (page - 1) * limit;
@@ -204,8 +202,6 @@ io.use(function(socket, next){
     await getConversation(d.userId, d.conversation_id).then(r => {
       let page = d.page;
       let limit = 25;
-      console.log(r);
-      console.log(d);
       let msgLength = r![0]["messages"].length;
       let endIndex = msgLength - (page - 1) * limit;
       let startIndex = Math.max(0, endIndex - limit);

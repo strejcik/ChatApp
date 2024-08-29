@@ -8,9 +8,7 @@
     "@mui/icons-material": "^5.16.5",
     "@mui/joy": "^5.0.0-beta.48",
     "@mui/material": "^5.16.5",
-    "@privacyresearch/libsignal-protocol-typescript": "^0.0.15",
-    "@react-rxjs/core": "^0.10.7",
-    "@react-rxjs/utils": "^0.9.7",
+    "@privacyresearch/libsignal-protocol-typescript": "^0.0.16",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -25,7 +23,6 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.25.1",
     "react-scripts": "5.0.1",
-    "rxjs": "^7.8.1",
     "socket.io-client": "^4.7.5",
     "typescript": "~3.7.2",
     "web-vitals": "^2.1.4"
