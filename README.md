@@ -12,6 +12,12 @@ ChatApp is React-Node application that allow sending messages between users simu
 - Encrypting messages
 - Decrypting messages
 
+## &#127775; Value
+1. Enhanced privacy and security: End-to-end encryption ensures that only the sender and recipient can read the messages, preventing unauthorized access third parties, or even the service provider.
+2. Protection against data breaches: Encrypted messaging safeguards sensitive information, such as personal details or business secrets, reducing the risk of exposure during data breaches or cyberattacks.
+3. Trust and confidence: Users are more likely to trust and use a chat application that guarantees their messages are secure, leading to higher user satisfaction and loyalty
+4. Preventing eavesdropping: Encryption ensures that even if a message is intercepted during transmission, it remains unreadable without the encryption key, protecting users from potential surveillance or eavesdropping by malicious actors.
+
 ## 💡Tech
 ![image](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
 ![image](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
