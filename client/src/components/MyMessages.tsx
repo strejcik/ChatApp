@@ -840,7 +840,7 @@ React.useEffect(() => {
         {
           isFetched && isDataPrepared && <ChatsPane
           chats={processedMessages.length > 0 ? processedMessages : messages}
-          selectedChatId={selectedChat[0].id}
+          selectedChatId={selectedChat[0]?.id}
           setSelectedChat={setSelectedChat}
           setFriendId={setFriendId}
           friendId={friendId}
